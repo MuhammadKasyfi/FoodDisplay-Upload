@@ -52,6 +52,16 @@
   /* padding-top: 3rem; */
 }
 
+.uploads {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.upload-label {
+  font-weight: 600;
+}
+
 .upload-container {
   display: flex;
   flex-direction: column;

@@ -68,6 +68,16 @@
   align-items: center;
   gap: 1rem;
 }
+
+.upload-success {
+  color: #137333;
+  font-weight: 600;
+}
+
+.upload-error {
+  color: #b3261e;
+  font-weight: 600;
+}
 /* adjust img in upload-icon */
 .upload-icon img {
   width: 80px;

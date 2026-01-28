@@ -1,108 +1,136 @@
-import { use, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import React from 'react'
+import { useState } from 'react'
 import './App.css'
+import uploadIcon from './assets/upload.svg'
+
+const CLOUD_NAME = 'ddbnfzbgl'
+const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`
+
+const UPLOAD_SETS = [
+  {
+    key: 'set1',
+    title: 'Set 1',
+    uploadPreset: 'set1_preset',
+    folder: 'set1',
+    inputClassName: 'file-input',
+  },
+  {
+    key: 'set2',
+    title: 'Set 2',
+    uploadPreset: 'set2_preset',
+    folder: 'set2',
+    inputClassName: 'file-input2',
+  },
+]
 
 function App() {
-  const[loading, setLoading] = useState(false)
-  const handleFileUpload = async(event) => {
-    const file = event.target.files[0]
-    if(!file) return
-    setLoading(true)
+  const [statusBySet, setStatusBySet] = useState(() =>
+    Object.fromEntries(
+      UPLOAD_SETS.map((s) => [s.key, { loading: false, error: '', url: '', publicId: '' }])
+    )
+  )
 
-    // only png or jpg
-    const allowedTypes = ['image/png', 'image/jpeg']
-    if (!allowedTypes.includes(file.type)) {
-      event.target.value = ''
-      setLoading(false)
-      return
-    }
+  const uploadImage = async ({ file, uploadPreset, folder }) => {
+    const data = new FormData()
+    data.append('file', file)
+    data.append('upload_preset', uploadPreset)
+    data.append('cloud_name', CLOUD_NAME)
+    data.append('folder', folder)
 
-    const set1_data = new FormData()
-    set1_data.append('file', file)
-    set1_data.append('upload_preset', 'set1_preset')
-    set1_data.append('cloud_name', 'ddbnfzbgl')
-    set1_data.append('folder', 'set1')
-
-    const res = await fetch('https://api.cloudinary.com/v1_1/ddbnfzbgl/image/upload', {
+    const res = await fetch(UPLOAD_URL, {
       method: 'POST',
-      body: set1_data
+      body: data,
     })
 
-    const uploadedImageURL = await res.json()
-    console.log('Uploaded image URL:', uploadedImageURL.secure_url ?? uploadedImageURL.url)
-
-    console.log('Uploaded file:', file)
-    setLoading(false)
+    const json = await res.json()
+    if (!res.ok) {
+      const message = json?.error?.message || 'Upload failed'
+      throw new Error(message)
+    }
+    return json
   }
 
-  const handleFileUpload2 = async(event) => {
-    const file = event.target.files[0]
-    if(!file) return
-    setLoading(true)
+  const handleFileUpload = (setKey, uploadPreset, folder) => async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
 
-    // only png or jpg
     const allowedTypes = ['image/png', 'image/jpeg']
     if (!allowedTypes.includes(file.type)) {
       event.target.value = ''
-      setLoading(false)
+      setStatusBySet((prev) => ({
+        ...prev,
+        [setKey]: { ...prev[setKey], loading: false, error: 'Only PNG/JPG allowed' },
+      }))
       return
     }
 
-    const set2_data = new FormData()
-    set2_data.append('file', file)
-    set2_data.append('upload_preset', 'set2_preset')
-    set2_data.append('cloud_name', 'ddbnfzbgl')
-    set2_data.append('folder', 'set2')
+    setStatusBySet((prev) => ({
+      ...prev,
+      [setKey]: { ...prev[setKey], loading: true, error: '', url: '', publicId: '' },
+    }))
 
-    const res = await fetch('https://api.cloudinary.com/v1_1/ddbnfzbgl/image/upload', {
-      method: 'POST',
-      body: set2_data
-    })
+    try {
+      const uploaded = await uploadImage({ file, uploadPreset, folder })
+      const url = uploaded.secure_url ?? uploaded.url ?? ''
+      const publicId = uploaded.public_id ?? ''
 
-    const uploadedImageURL = await res.json()
-    console.log('Uploaded image URL:', uploadedImageURL.secure_url ?? uploadedImageURL.url)
+      console.log(`[${setKey}] Uploaded image URL:`, url)
+      console.log(`[${setKey}] public_id:`, publicId)
 
-    console.log('Uploaded file:', file)
-    setLoading(false)
+      setStatusBySet((prev) => ({
+        ...prev,
+        [setKey]: { ...prev[setKey], loading: false, error: '', url, publicId },
+      }))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Upload failed'
+      setStatusBySet((prev) => ({
+        ...prev,
+        [setKey]: { ...prev[setKey], loading: false, error: message },
+      }))
+    } finally {
+      event.target.value = ''
+    }
   }
 
   return (
     <>
-      <div className='file-upload'>
-        <h2>Set 1</h2>
-        <div className='upload-container'>
-          <div className='upload-icon'>
-            {
-              loading ? 'Uploading...' : <img src='src/assets/upload.svg' alt='Upload icon' />
-            }
-          </div>
-        </div>
+      <div className='uploads'>
+        {UPLOAD_SETS.map((s) => {
+          const status = statusBySet[s.key]
+          return (
+            <div key={s.key} className='file-upload'>
+              <h2>{s.title}</h2>
+              <div className='upload-container'>
+                <div className='upload-icon'>
+                  {status.loading ? 'Uploading...' : <img src={uploadIcon} alt='Upload icon' />}
+                </div>
 
-        <input
-          type='file'
-          className='file-input'
-          accept='image/png,image/jpeg'
-          onChange={handleFileUpload}
-        ></input>
-      </div>
-      <div className='file-upload'>
-        <h2>Set 2</h2>
-        <div className='upload-container'>
-          <div className='upload-icon'>
-            {
-              loading ? 'Uploading...' : <img src='src/assets/upload.svg' alt='Upload icon' />
-            }
-          </div>
-        </div>
+                <div className='upload-label'>
+                  Folder: <strong>{s.folder}</strong>
+                </div>
 
-        <input
-          type='file'
-          className='file-input2'
-          accept='image/png,image/jpeg'
-          onChange={handleFileUpload2}
-        ></input>
+                {!!status.error && (
+                  <div className='upload-label' style={{ color: 'crimson' }}>
+                    {status.error}
+                  </div>
+                )}
+
+                {!!status.url && (
+                  <a href={status.url} target='_blank' rel='noreferrer'>
+                    View uploaded image
+                  </a>
+                )}
+              </div>
+
+              <input
+                type='file'
+                className={s.inputClassName}
+                accept='image/png,image/jpeg'
+                onChange={handleFileUpload(s.key, s.uploadPreset, s.folder)}
+                disabled={status.loading}
+              />
+            </div>
+          )
+        })}
       </div>
     </>
   )

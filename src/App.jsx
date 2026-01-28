@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { use, useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import React from 'react'
 import './App.css'
 import uploadIcon from './assets/upload.svg'
 
@@ -89,6 +92,23 @@ function App() {
     } finally {
       event.target.value = ''
     }
+
+    const set2_data = new FormData()
+    set2_data.append('file', file)
+    set2_data.append('upload_preset', 'set2_preset')
+    set2_data.append('cloud_name', 'ddbnfzbgl')
+    set2_data.append('folder', 'set2')
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/ddbnfzbgl/image/upload', {
+      method: 'POST',
+      body: set2_data
+    })
+
+    const uploadedImageURL = await res.json()
+    console.log('Uploaded image URL:', uploadedImageURL.secure_url ?? uploadedImageURL.url)
+
+    console.log('Uploaded file:', file)
+    setLoading(false)
   }
 
   return (

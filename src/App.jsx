@@ -4,6 +4,7 @@ import viteLogo from '/vite.svg'
 import React from 'react'
 import './App.css'
 import ImageUploader from './components/ImageUploader'
+import TextUplaoder from './components/TextUploader'
 
 function App() {
   return (
@@ -11,6 +12,8 @@ function App() {
       <div>
         <h1>Image Uploader</h1>
         <ImageUploader />
+        <h1>Text Uploader</h1>
+        <TextUplaoder />
       </div>
     </>
   )
